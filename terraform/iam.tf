@@ -9,9 +9,7 @@ data "aws_iam_policy_document" "lambda_assume_role" {
   }
 }
 
-# Define as permissões para a Lambda (logs + acesso ao S3)
 data "aws_iam_policy_document" "lambda_permissions" {
-  # Permissões básicas de execução Lambda (logs)
   statement {
     actions = [
       "logs:CreateLogGroup",
@@ -21,7 +19,6 @@ data "aws_iam_policy_document" "lambda_permissions" {
     resources = ["arn:aws:logs:*:*:*"]
   }
 
-  # Permissões para o S3 (leitura no bucket específico)
   statement {
     actions = [
       "s3:GetObject",
@@ -33,7 +30,6 @@ data "aws_iam_policy_document" "lambda_permissions" {
     ]
   }
 
-  # Permissão para o S3 escrever no bucket de destino
   statement {
     actions = [
       "s3:PutObject",
@@ -43,20 +39,17 @@ data "aws_iam_policy_document" "lambda_permissions" {
   }
 }
 
-# Cria a role do IAM para a Lambda
 resource "aws_iam_role" "lambda_role" {
   name               = "lambda_transform_data_role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
 }
 
-# Anexa as permissões à role da Lambda
 resource "aws_iam_role_policy" "lambda_execution_policy" {
   name   = "lambda_execution_policy"
   role   = aws_iam_role.lambda_role.name
   policy = data.aws_iam_policy_document.lambda_permissions.json
 }
 
-# Permissão para o S3 invocar a Lambda
 resource "aws_lambda_permission" "allow_bucket" {
   statement_id  = "AllowExecutionFromS3Bucket"
   action        = "lambda:InvokeFunction"
@@ -92,8 +85,8 @@ resource "aws_iam_policy" "glue_logs_policy" {
           "logs:PutLogEvents"
         ]
         Resource = [
-          "arn:aws:logs:us-east-1:476114135520:log-group:/aws-glue/crawlers",
-          "arn:aws:logs:us-east-1:476114135520:log-group:/aws-glue/crawlers:*"
+          "arn:aws:logs:us-east-1:yourID:log-group:/aws-glue/crawlers",
+          "arn:aws:logs:us-east-1:yourID:log-group:/aws-glue/crawlers:*"
         ]
       },
       {
@@ -215,7 +208,6 @@ resource "aws_iam_role_policy_attachment" "athena_s3_glue" {
   policy_arn = aws_iam_policy.athena_s3_policy.arn
 }
 
-# Adicionar a política para o Glue que permite acesso ao S3 e a Glue.
 resource "aws_iam_role_policy_attachment" "glue_s3_permissions" {
   role       = aws_iam_role.accessGlue.name
   policy_arn = aws_iam_policy.S3policy.arn
